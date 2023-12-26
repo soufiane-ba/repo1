@@ -19,6 +19,7 @@
 		<sonar.projectKey>mon-projet</sonar.projectKey>
                 <sonar.projectName>mon-projet</sonar.projectName>
                 <sonar.host.url>http://localhost:9000</sonar.host.url>
+		<sonar.token>sqp_bb27d1ec012711b9ca378509665e29fb0a6157f9</sonar.token>
 	</properties>
 
 	<dependencies>
