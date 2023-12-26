@@ -1,0 +1,18 @@
+trigger:
+- main
+
+pool:
+  name: 'my-agent'
+
+jobs:
+- job: Build_SonarQubeAnalysis_PushToDockerHub
+  displayName: 'Build, Push to Docker Hub, and SonarQube Analysis'
+  steps:
+  - checkout: self
+
+  - task: Maven@3
+    inputs:
+      mavenPomFile: 'pom.xml'
+      goals: 'clean install'
+      publishJUnitResults: true
+    displayName: 'Build Java Application'
