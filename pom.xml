@@ -16,8 +16,8 @@
 
 	<properties>
 		<java.version>1.8</java.version>
-		<sonar.projectKey>my-projet</sonar.projectKey>
-                <sonar.projectName>my-projet</sonar.projectName>
+		<sonar.projectKey>mon-projet</sonar.projectKey>
+                <sonar.projectName>mon-projet</sonar.projectName>
                 <sonar.host.url>http://localhost:9000</sonar.host.url>
 	</properties>
 
