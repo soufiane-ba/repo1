@@ -12,4 +12,4 @@ command:
 	cd src/main/webapp/reactjs
 	npm install
 	npm audit fix
-	npm run start
+	npm run start"# pipeline" 
