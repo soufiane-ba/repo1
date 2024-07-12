@@ -2,89 +2,58 @@ pipeline {
     agent any
 
     environment {
-        GIT_REPO_URL = 'https://github.com/soufiane-ba/repo1.git'
-        DOCKER_IMAGE = 'maven:latest'
-        POSTGRES_DB = 'book-store'
-        POSTGRES_USER = 'soufiane'
-        POSTGRES_PASSWORD = 'soufiane'
-        BACKEND_PORT = 8081
-        FRONTEND_PORT = 3000
+        DOCKERHUB_CREDENTIALS = credentials('credentials')  // ID des credentials Docker Hub stockés dans Jenkins
+        DOCKER_IMAGE_BACKEND = "soufiane1912/my-project-backend"
+        DOCKER_IMAGE_FRONTEND = "soufiane1912/my-project-frontend"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                script {
-                    git branch: 'main', url: 'https://github.com/soufiane-ba/repo1.git'
-                }
+                // Clone du repo Git
+                git branch: 'main', url: 'https://github.com/soufiane-ba/repo1.git'
             }
         }
-
-        stage('Database Configuration') {
+        
+        stage('Build JAR') {
             steps {
                 script {
-                    sh 'echo spring.datasource.url=jdbc:postgresql://localhost:5432/book-store > src/main/resources/application.properties'
-                }
-            }
-        }
-
-        stage('Build and Run Backend') {
-            steps {
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        def dockerImage = docker.build('backend', '-f dockerfileboot .')
-                        dockerImage.inside("-v ${PWD}/my-project:/app") {
-                            sh 'mvn clean install && java -jar target/book-rest-api-reactjs-0.0.1-SNAPSHOT.jar --server.port=8081 &'
-                        }
+                    dir('./') {
+                        // Construction du projet avec Maven
+                        sh 'mvn clean package'
                     }
                 }
             }
         }
 
-        stage('Build and Run Frontend') {
+        stage('Build Backend Image') {
             steps {
                 script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        def dockerImage = docker.build('frontend', '-f dockerfilejs .')
-                        dockerImage.inside("-v ${PWD}/my-project:/app") {
-                            sh 'cd src/main/webapp/reactjs && npm install && npm audit fix && npm run build -- --port 3000 &'
-                        }
+                    dir('./') {
+                        sh "docker build -t ${DOCKER_IMAGE_BACKEND} -f dockerfileboot ."
                     }
                 }
             }
         }
 
-        stage('Build Docker Images') {
+        stage('Build Frontend Image') {
             steps {
                 script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        sh 'docker build -t backend -f dockerfileboot .'
-                        sh 'cd src/main/webapp/reactjs && docker build -t frontend -f dockerfilejs .'
+                    dir('./src/main/webapp/reactjs/') {
+                        sh "docker build -t ${DOCKER_IMAGE_FRONTEND} -f dockerfilejs ."
                     }
                 }
             }
         }
 
-        stage('Run Docker Containers') {
+        stage('Push the image') {
             steps {
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        sh 'echo "POSTGRES_DB=${POSTGRES_DB}" > .env'
-                        sh 'echo "POSTGRES_USER=${POSTGRES_USER}" >> .env'
-                        sh 'echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> .env'
-                        sh 'docker-compose up -d'
-                    }
+                withCredentials([usernamePassword(credentialsId: 'dockerHubCredentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                    sh 'docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}'
+                    sh "docker push ${DOCKER_IMAGE_BACKEND}"
+                    sh "docker push ${DOCKER_IMAGE_FRONTEND}"
                 }
             }
-        }
-    }
-
-    post {
-        success {
-            echo 'Pipeline completed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed.'
-        }
-    }
+        } 
+    } 
 }
