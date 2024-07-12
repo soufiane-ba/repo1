@@ -29,71 +29,54 @@ pipeline {
         
         stage('Install PostgreSQL') {
             steps {
-                // Installer PostgreSQL
+                // Utilisation d'un conteneur Docker pour installer PostgreSQL
                 script {
-                    sh '''
-                    sudo apt update
-                    sudo apt install -y postgresql postgresql-contrib
-                    sudo -u postgres psql -c "CREATE USER ${POSTGRES_USER} WITH PASSWORD '${POSTGRES_PASSWORD}';"
-                    sudo -u postgres psql -c "CREATE DATABASE ${POSTGRES_DB} OWNER ${POSTGRES_USER};"
-                    sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${POSTGRES_DB} TO ${POSTGRES_USER};"
-                    '''
+                    docker.image('postgres:latest').run("-e POSTGRES_DB=${POSTGRES_DB} -e POSTGRES_USER=${POSTGRES_USER} -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD}")
                 }
             }
         }
         
         stage('Build and Run Backend') {
             steps {
-                // Construire et exécuter le backend Java
+                // Utilisation d'un conteneur Docker pour construire et exécuter le backend Java
                 script {
-                    sh '''
-                    cd my-project
-                    mvn clean install
-                    java -jar target/book-rest-api-reactjs-0.0.1-SNAPSHOT.jar --server.port=${BACKEND_PORT} &
-                    '''
+                    docker.image('maven:latest').inside('-v ${PWD}/my-project:/app') {
+                        sh 'cd /app && mvn clean install && java -jar target/book-rest-api-reactjs-0.0.1-SNAPSHOT.jar --server.port=${BACKEND_PORT} &'
+                    }
                 }
             }
         }
         
         stage('Build and Run Frontend') {
             steps {
-                // Construire et exécuter le frontend React
+                // Utilisation d'un conteneur Docker pour construire et exécuter le frontend React
                 script {
-                    sh '''
-                    cd my-project/src/main/webapp/reactjs
-                    npm install
-                    npm audit fix
-                    npm run build -- --port ${FRONTEND_PORT} &
-                    '''
+                    docker.image('node:latest').inside('-v ${PWD}/my-project:/app') {
+                        sh 'cd /app/src/main/webapp/reactjs && npm install && npm audit fix && npm run build -- --port ${FRONTEND_PORT} &'
+                    }
                 }
             }
         }
         
         stage('Build Docker Images') {
             steps {
-                // Builder les images Docker pour le backend et le frontend
+                // Utilisation d'un conteneur Docker pour construire les images Docker
                 script {
-                    sh '''
-                    cd my-project
-                    docker build -t backend -f dockerfileboot .
-                    cd src/main/webapp/reactjs
-                    docker build -t frontend -f dockerfilejs .
-                    '''
+                    docker.image('docker:latest').inside('-v ${PWD}/my-project:/app') {
+                        sh 'cd /app && docker build -t backend -f dockerfileboot .'
+                        sh 'cd /app/src/main/webapp/reactjs && docker build -t frontend -f dockerfilejs .'
+                    }
                 }
             }
         }
         
         stage('Run Docker Containers') {
             steps {
-                // Exécuter les conteneurs Docker avec Docker Compose
+                // Utilisation d'un conteneur Docker pour exécuter les conteneurs Docker avec Docker Compose
                 script {
-                    sh '''
-                    cd my-project
-                    echo "POSTGRES_DB=${POSTGRES_DB}" > .env
-                    echo "POSTGRES_USER=${POSTGRES_USER}" >> .env
-                    echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> .env
-                    docker-compose up -d
-                    '''
+                    docker.image('docker/compose:latest').inside('-v ${PWD}/my-project:/app') {
+                        sh 'cd /app && echo "POSTGRES_DB=${POSTGRES_DB}" > .env && echo "POSTGRES_USER=${POSTGRES_USER}" >> .env && echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> .env && docker-compose up -d'
+                    }
                 }
             }
         }
