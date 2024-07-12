@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('credentials')  // ID des credentials Docker Hub stockés dans Jenkins
+        DOCKERHUB_CREDENTIALS = credentials('IDDockerhub')  // ID des credentials Docker Hub stockés dans Jenkins
         DOCKER_IMAGE_BACKEND = "soufiane1912/my-project-backend"
         DOCKER_IMAGE_FRONTEND = "soufiane1912/my-project-frontend"
     }
@@ -48,7 +48,7 @@ pipeline {
 
         stage('Push the image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                withCredentials([usernamePassword(credentialsId: 'IDDockerhub', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                     sh 'docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}'
                     sh "docker push ${DOCKER_IMAGE_BACKEND}"
                     sh "docker push ${DOCKER_IMAGE_FRONTEND}"
