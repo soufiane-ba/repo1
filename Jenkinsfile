@@ -48,7 +48,7 @@ pipeline {
 
         stage('Push the image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerHubCredentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                withCredentials([usernamePassword(credentialsId: 'credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                     sh 'docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}'
                     sh "docker push ${DOCKER_IMAGE_BACKEND}"
                     sh "docker push ${DOCKER_IMAGE_FRONTEND}"
