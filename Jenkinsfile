@@ -67,5 +67,34 @@ pipeline {
                 sh '''
                 cd my-project
                 docker build -t backend -f dockerfileboot .
-                cd src/main/webap
+                cd src/main/webapp/reactjs
+                docker build -t frontend -f dockerfilejs .
+                '''
+            }
+        }
+        
+        stage('Run Docker Containers') {
+            steps {
+                // Exécuter les conteneurs Docker avec Docker Compose
+                sh '''
+                cd my-project
+                echo "POSTGRES_DB=${env.POSTGRES_DB}" > .env
+                echo "POSTGRES_USER=${env.POSTGRES_USER}" >> .env
+                echo "POSTGRES_PASSWORD=${env.POSTGRES_PASSWORD}" >> .env
+                docker-compose up -d
+                '''
+            }
+        }
+    }
 
+    post {
+        success {
+            // Notifications de succès
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            // Notifications d'échec
+            echo 'Pipeline failed.'
+        }
+    }
+}
